@@ -17,7 +17,16 @@ namespace FactWorld
 
         public virtual void PathFinding()
         {
-            
+            Collider[] inRad = Physics.OverlapSphere(transform.position, ActiveRadius, mask); //Step 2.5
+            for (int i = 0; i < inRad.Length; i++)
+            {
+                var cl = inRad[i].GetComponent<InteractWithField>();
+                var point = cl.GetMaxPoint();
+                if (cl.GetMaxPoint() <= point + JumpStep)
+                {
+
+                }
+            }
         }
 
         public virtual void SoundFinding()

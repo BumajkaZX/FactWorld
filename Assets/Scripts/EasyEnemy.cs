@@ -26,16 +26,7 @@ namespace FactWorld
         public override void PathFinding()
         {
        
-            Collider[] inRad = Physics.OverlapSphere(transform.position, _activeRadius, _mask); //Step 2.5
-            for (int i = 0; i < inRad.Length; i++)
-            {
-                var cl = inRad[i].GetComponent<InteractWithField>();
-                var point = cl.GetMaxPoint();
-                if (cl.GetMaxPoint() <= point + jumpStep)
-                {
-                    
-                }
-            }
+            
            
         }
 
