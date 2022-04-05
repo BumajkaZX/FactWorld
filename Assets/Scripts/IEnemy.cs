@@ -6,7 +6,7 @@ namespace FactWorld
 {
     public interface IEnemy
     {
-        LayerMask mask { get; }
+        LayerMask MaskForHex { get; }
         int Damage { get; set; }
         int HP { get; }
         float ActiveRadius { get; set; }

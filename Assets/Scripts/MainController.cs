@@ -13,11 +13,12 @@ namespace FactWorld
         [SerializeField] private LayerMask _hexMask;
         [SerializeField] private float _radius, _mainCharacterOffset, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim;
         [SerializeField] private Vector3 _activePosition, _activeHexDefaultPos, _characterMoveUp;
-        [SerializeField] private GameObject _characterHex, _mainCharacter, _pointToFollow, _islandCentre, _activeHex;
+        [SerializeField] private GameObject  _mainCharacter, _pointToFollow, _islandCentre;
         [SerializeField] private CinemachineVirtualCamera _cinemachine;
         [SerializeField] private List<GameObject> _activeHexSnL = new List<GameObject>();
         [SerializeField] private List<EnemyBase> enemies = new List<EnemyBase>();
         [SerializeField] private List<float> jumpStep = new List<float>();
+        private GameObject _activeHex, _characterHex;
         private ListPlaces _listPlaces = new ListPlaces();
         private List<int> _activePlaces = new List<int>();
         private List<InteractWithField> _activeHexList = new List<InteractWithField>();
