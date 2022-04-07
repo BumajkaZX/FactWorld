@@ -19,12 +19,11 @@ namespace FactWorld
 
         #endregion
 
-
         private void Awake()
         {
             _defaultPosition = gameObject.transform.position;
             _meshRenderer = GetComponent<MeshRenderer>();
-            _mainController = GameEventManager._mainController;
+            _mainController = GameEventManager.MainController;
         }
         private void Start()
         {
@@ -36,8 +35,6 @@ namespace FactWorld
                 _canBeInteract = false;
             }
         }
-
-
         private void OnMouseUpAsButton()
         {
             if (_canBeInteract && !GameEventManager.WhichTurn)
@@ -57,7 +54,6 @@ namespace FactWorld
                 }
             }
         }
-
         public void ResetPosition()
         {
             _set = false;
@@ -70,17 +66,19 @@ namespace FactWorld
                     _disposables.Clear();
             }).AddTo(_disposables);
         }
+
         [ContextMenu("Set Enemy Position")]
         void SetEnemy()
         {
-           var x = Physics.OverlapSphere(transform.position, 1f);
+            var x = Physics.OverlapSphere(transform.position, 1f);
             print(x.Length);
             foreach (var b in x)
             {
-               var f =  b.gameObject?.GetComponent<IEnemy>();
-                if (f != null)
+                var offset = b.gameObject.GetComponent<IEnemy>().EnemyOffsetOnHex;
+                var f =  b.gameObject.GetComponent<IEnemy>();
+                if (f != null && offset != null)
                 {
-                    b.gameObject.transform.position = transform.position - _offset;
+                    b.gameObject.transform.position = transform.position - offset;
                     b.gameObject.GetComponent<Collider>().enabled = false;
                 }
             }

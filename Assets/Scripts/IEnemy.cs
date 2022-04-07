@@ -10,7 +10,7 @@ namespace FactWorld
         int Damage { get; set; }
         int HP { get; }
         float ActiveRadius { get; set; }
-
+        Vector3 EnemyOffsetOnHex { get; set; }
         void SoundFinding();
         void PathFinding();
         

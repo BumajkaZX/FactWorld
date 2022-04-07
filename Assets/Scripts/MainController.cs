@@ -10,14 +10,16 @@ namespace FactWorld
     public class MainController : MonoBehaviour
     {
         #region params
+        public List<GameObject> Enemies  { get => _enemies; set => _enemies = value; }
         [SerializeField] private LayerMask _hexMask;
         [SerializeField] private float _radius, _mainCharacterOffset, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim;
         [SerializeField] private Vector3 _activePosition, _activeHexDefaultPos, _characterMoveUp;
         [SerializeField] private GameObject  _mainCharacter, _pointToFollow, _islandCentre;
         [SerializeField] private CinemachineVirtualCamera _cinemachine;
         [SerializeField] private List<GameObject> _activeHexSnL = new List<GameObject>();
-        [SerializeField] private List<EnemyBase> enemies = new List<EnemyBase>();
+        [SerializeField] private List<EnemyBase> _enemiesJumpStep = new List<EnemyBase>();
         [SerializeField] private List<float> jumpStep = new List<float>();
+        private List<GameObject> _enemies = new List<GameObject>();
         private GameObject _activeHex, _characterHex;
         private ListPlaces _listPlaces = new ListPlaces();
         private List<int> _activePlaces = new List<int>();
@@ -26,13 +28,13 @@ namespace FactWorld
         #endregion
         private void Awake()
         {
-            for (int i = 0; i < enemies.Count; i++)
+            for (int i = 0; i < _enemiesJumpStep.Count; i++)
             {
-                enemies[i].JumpStep = jumpStep[i] + _MaxPointHex;
+                _enemiesJumpStep[i].JumpStep = jumpStep[i] + _MaxPointHex;
             }
             _cinemachine.Follow = _pointToFollow.transform;
             _cinemachine.LookAt = _pointToFollow.transform;
-            GameEventManager._mainController = this;
+            GameEventManager.MainController = this;
             Load();
         }
         public void SetStartHexParams(GameObject hex)
