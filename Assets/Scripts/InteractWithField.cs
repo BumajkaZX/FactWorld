@@ -12,6 +12,7 @@ namespace FactWorld
         [SerializeField] int _objectID;
         [SerializeField] float _maxPoint, _activeHexSpeedAnim;
         [SerializeField] GameObject _child;
+        [SerializeField] LayerMask _enemy;
         Vector3 _offset;
         MeshRenderer _meshRenderer;
         MainController _mainController;
@@ -23,17 +24,11 @@ namespace FactWorld
         {
             _defaultPosition = gameObject.transform.position;
             _meshRenderer = GetComponent<MeshRenderer>();
-            _mainController = GameEventManager.MainController;
+            
         }
         private void Start()
         {
-
-            if (_ActivePosition)
-            {
-                _mainController.SetStartHexParams(gameObject);
-                _mainController.SetMainActiveHex(gameObject, _maxPoint);
-                _canBeInteract = false;
-            }
+            _mainController = GameEventManager.MainController;
         }
         private void OnMouseUpAsButton()
         {
@@ -42,7 +37,7 @@ namespace FactWorld
                 if (_set)
                 {
                     _ActivePosition = true;
-                    _mainController.SetMainActiveHex(gameObject, _maxPoint);
+                    _mainController.SetMainActiveHex(gameObject, _maxPoint, _objectID);
                     ResetPosition();
                 }
                 else if (!_set)
@@ -70,7 +65,7 @@ namespace FactWorld
         [ContextMenu("Set Enemy Position")]
         void SetEnemy()
         {
-            var x = Physics.OverlapSphere(transform.position, 1f);
+            var x = Physics.OverlapSphere(transform.position, 1f, _enemy);
             print(x.Length);
             foreach (var b in x)
             {
@@ -79,6 +74,7 @@ namespace FactWorld
                 if (f != null && offset != null)
                 {
                     b.gameObject.transform.position = transform.position - offset;
+                    f.Position = b.transform.position;
                     b.gameObject.GetComponent<Collider>().enabled = false;
                 }
             }
@@ -89,10 +85,18 @@ namespace FactWorld
         {
             return _ActivePosition;
         }
-        public void Activate(bool interactActive, bool childActive)
+        public void ChildActivate(bool childActive)
         {
             _child?.SetActive(childActive);
-            _canBeInteract = interactActive;
+            
+        }
+        public void InteractActive(bool interactActive)
+        {
+           _canBeInteract = interactActive;
+        }
+        public void SetActive(bool g)
+        {
+            _ActivePosition = g;
         }
         public void MeshActive(bool active)
         {
@@ -117,6 +121,10 @@ namespace FactWorld
         public int GetID()
         {
             return _objectID;
+        }
+        public Vector3 GetOffset()
+        {
+            return _defaultPosition;
         }
         public void SetOffset(float offset)
         {

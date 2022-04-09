@@ -2,17 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
+using System.Threading.Tasks;
 
 namespace FactWorld
 {
     public abstract class EnemyBase : MonoBehaviour, IEnemy
     {
+        public abstract float SpeedAnimation { get; set; }
+
         public abstract LayerMask MaskForHex { get; }
 
         public abstract LayerMask MaskForSound{ get; }
         public abstract int Damage { get; set; }
 
-        public abstract int HP { get; }
+        public abstract int HP { get; set; }
+        
+        public abstract int ID { get; set; }
 
         public abstract float ActiveRadius { get; set; }
 
@@ -23,14 +28,16 @@ namespace FactWorld
         public abstract Vector3 LoudestSoundPosition { get; set; }
         
         public abstract Vector3 EnemyOffsetOnHex { get; set; }
+        public abstract Vector3 Position { get; set; }
 
-        public virtual void Awake()
+        public virtual void Start()
         {
-            GameEventManager.Turn.AddListener(SoundFinding);
-            GameEventManager.MainController.Enemies.Add(gameObject);
+            if (Position != Vector3.zero) gameObject.transform.position = Position;
         }
-        public virtual void PathFinding()
+        public virtual async Task PathFinding()
         {
+
+            SoundFinding();
             List<Transform> availablePosition = new List<Transform>();
             Collider[] inRad = Physics.OverlapSphere(transform.position, ActiveRadius, MaskForHex); //Step 2.5
             for (int i = 0; i < inRad.Length; i++)
@@ -55,23 +62,32 @@ namespace FactWorld
             }
 
             CompositeDisposable disposible = new CompositeDisposable();
-            var goToPosition = closetPosition + EnemyOffsetOnHex;
+            var goToPosition = closetPosition - EnemyOffsetOnHex;
+            
+            var delay = Mathf.Abs(1 / (Time.fixedDeltaTime * SpeedAnimation));
             var t = 0f;
-            Observable.EveryFixedUpdate().Subscribe(_ => 
+            var middle = Vector3.Lerp(gameObject.transform.position, goToPosition, 0.5f);
+            var from = gameObject.transform.position;
+            var up = Mathf.Abs((transform.position.y - goToPosition.y) * 2.1f) + Mathf.Abs(EnemyOffsetOnHex.y * 2.1f);  
+            middle += new Vector3(0, up , 0);
+            Observable.EveryFixedUpdate().Subscribe(_ =>
             {
-                print(t);
-                gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, goToPosition, t);
-                t += Time.fixedDeltaTime;
-                if (t >= 1) { disposible.Clear(); }
+                gameObject.transform.position = Vector3.Lerp(Vector3.Lerp(from, middle, t), Vector3.Lerp(middle, goToPosition, t), t);
+                t += Time.fixedDeltaTime * SpeedAnimation;
+                if (t >= 1) 
+                { 
+                    disposible.Clear();
+                    Position = gameObject.transform.position;
+                }
             }).AddTo(disposible);
-
+            Attack();
+            await Task.Delay((int)delay * 10);
         }
 
         public virtual void SoundFinding()
         {
             List<Transform> soundPosition = new List<Transform>();
             Collider[] inRad = Physics.OverlapSphere(transform.position, SoundRadius, MaskForSound); //Step 2.5
-            print("Sound Obj Length  =" + inRad.Length);
             for (int i = 0; i < inRad.Length; i++)
             {
                 var obj = inRad[i].gameObject;
@@ -92,6 +108,10 @@ namespace FactWorld
             }
 
             LoudestSoundPosition = posOfLoudNoise;
+        }
+        public virtual void Attack()
+        {
+
         }
 
     }

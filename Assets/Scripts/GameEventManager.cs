@@ -2,13 +2,13 @@ using UnityEngine.Events;
 
 namespace FactWorld
 {
-    public class GameEventManager
+    public static class GameEventManager
     {
        
         public static  bool WhichTurn { get => turn;  private set { } }
         public static float NoiseChanse { get => _noiseChance; set => _noiseChance = value; }
 
-        private static bool turn = true;
+        private static bool turn = false;
 
         private static float _noiseChance;
 
@@ -16,9 +16,12 @@ namespace FactWorld
 
         public static MainController MainController;
 
-        public static void TurnStart()
+        public static void InverseTurn()
         {
             turn = !turn;
+        }
+        public static void TurnStart()
+        {
             Turn.Invoke();
         }
 

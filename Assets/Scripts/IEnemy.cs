@@ -1,18 +1,22 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace FactWorld
 {
     public interface IEnemy
     {
-        LayerMask MaskForHex { get; }
         int Damage { get; set; }
-        int HP { get; }
+        int HP { get; set; }
+        int ID { get; set; }
         float ActiveRadius { get; set; }
+        float SoundRadius { get; set; }
+
         Vector3 EnemyOffsetOnHex { get; set; }
-        void SoundFinding();
-        void PathFinding();
+        Vector3 Position { get; set; }
+        Vector3 LoudestSoundPosition { get; set; }
+
+        float JumpStep { get; set; }
+
         
     }
 }
