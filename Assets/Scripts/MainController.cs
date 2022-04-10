@@ -51,6 +51,7 @@ namespace FactWorld
             _cinemachine.Follow = _pointToFollow.transform;
             _cinemachine.LookAt = _pointToFollow.transform;
             GameEventManager.MainController = this;
+            GameEventManager.Camera = _cinemachine;
             GameEventManager.Turn.AddListener(EnemyTurn);
 
 

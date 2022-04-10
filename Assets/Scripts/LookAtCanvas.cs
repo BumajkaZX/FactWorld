@@ -11,6 +11,7 @@ namespace FactWorld
         [SerializeField, Range(0f, 1f)] private float _distance;
         private void Start()
         {
+            var childs = GetComponentsInChildren<Transform>();
             Observable.EveryUpdate().Subscribe(_ => 
             {
                 var dir = Vector3.Lerp(_followPoint.transform.position, _camera.transform.position, _distance);

@@ -30,6 +30,7 @@ namespace FactWorld.Tools
 
         List<PlacesChance> places = new List<PlacesChance>();
         [ContextMenu("Generate")]
+#if UNITY_EDITOR
         private void GenerateIsland()
         {
             if (_HexIsland.Count != 0) return;
@@ -156,7 +157,7 @@ namespace FactWorld.Tools
                 placesChance[i].chance = chance;
             }
         }
-
+#endif
         [ContextMenu("InActiveHex")]
         public void InActiveHex()
         {

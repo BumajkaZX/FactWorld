@@ -1,4 +1,5 @@
 using UnityEngine.Events;
+using Cinemachine;
 
 namespace FactWorld
 {
@@ -15,6 +16,7 @@ namespace FactWorld
         public static UnityEvent Turn = new UnityEvent();
 
         public static MainController MainController;
+        public static CinemachineVirtualCamera Camera;
 
         public static void InverseTurn()
         {

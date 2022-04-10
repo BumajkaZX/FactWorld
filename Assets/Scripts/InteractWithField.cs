@@ -1,6 +1,6 @@
 using UniRx;
 using UnityEngine;
-
+using Cinemachine;
 
 namespace FactWorld
 {
@@ -13,10 +13,11 @@ namespace FactWorld
         [SerializeField] float _maxPoint, _activeHexSpeedAnim;
         [SerializeField] GameObject _child;
         [SerializeField] LayerMask _enemy;
-        Vector3 _offset;
-        MeshRenderer _meshRenderer;
-        MainController _mainController;
-        CompositeDisposable _disposables = new CompositeDisposable();
+        private Vector3 _offset;
+        private MeshRenderer _meshRenderer;
+        private MainController _mainController;
+        private CinemachineVirtualCamera _camera;
+        private CompositeDisposable _disposables = new CompositeDisposable();
 
         #endregion
 
@@ -28,26 +29,31 @@ namespace FactWorld
         }
         private void Start()
         {
+            _camera = GameEventManager.Camera;
             _mainController = GameEventManager.MainController;
         }
+       
         private void OnMouseUpAsButton()
         {
-            if (_canBeInteract && !GameEventManager.WhichTurn)
-            {
-                if (_set)
+            
+                if (_canBeInteract && !GameEventManager.WhichTurn)
                 {
-                    _ActivePosition = true;
-                    _mainController.SetMainActiveHex(gameObject, _maxPoint, _objectID);
-                    ResetPosition();
-                }
-                else if (!_set)
-                {
-                    _set = true;
-                    _mainController.UpHex(gameObject,  _defaultPosition);
-                    _disposables.Clear();
+                    if (_set)
+                    {
+                        _ActivePosition = true;
+                        _mainController.SetMainActiveHex(gameObject, _maxPoint, _objectID);
+                        ResetPosition();
+                    }
+                    else if (!_set)
+                    {
+                        _set = true;
+                        _mainController.UpHex(gameObject, _defaultPosition);
+                        _disposables.Clear();
 
+                    }
                 }
-            }
+            
+            
         }
         public void ResetPosition()
         {
@@ -130,6 +136,8 @@ namespace FactWorld
         {
             _offset = new Vector3(0, offset, 0);
         }
+
+        
         #endregion
     }
 
