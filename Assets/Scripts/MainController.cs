@@ -296,11 +296,9 @@ namespace FactWorld
             
         }
         [ContextMenu("Clear Save")]
-        public async void ClearSave()
+        public void ClearSave()
         {
-            _activePlaces.Clear();
-            
-            await Save();
+            File.Delete(Application.persistentDataPath + "/Saves/Saves.json");
         }
         
        
