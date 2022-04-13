@@ -23,6 +23,7 @@ namespace FactWorld
         [SerializeField] private List<float> jumpStep = new List<float>();
         [SerializeField] private int _activeObjectID;
         [SerializeField] private List<EnemyBase> _enemies = new List<EnemyBase>();
+        [SerializeField] private List<AttackObject> _guns = new List<AttackObject>();
         private GameObject _activeHex, _characterHex;
         private ListPlaces _listPlaces = new ListPlaces();
         private List<int> _activePlaces = new List<int>();

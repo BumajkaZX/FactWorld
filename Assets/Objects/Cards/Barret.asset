@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc4038bfa4c34d94b9c94acc9a419fc7, type: 3}
   m_Name: Barret
   m_EditorClassIdentifier: 
-  _innerCard: {fileID: 0}
-  _interfaceCard: {fileID: 0}
-  _damage: 0
-  _attackRadius: 0
-  _attackNoise: 0
-  _noiseRadius: 0
+  _card: {fileID: 1359588294646116580, guid: b9e2436a2bb970b429e027b2abe898fc, type: 3}
+  _damage: 100
+  _attackRadius: 7.5
+  _attackNoise: 0.3
+  _noiseRadius: 2.5
