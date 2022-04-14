@@ -8,6 +8,8 @@ namespace FactWorld
     {
         public LayerMask PlayerMask { get; set; }
         public int HP { get; set; }
+
+        public List<GameObject> Guns { get; set; }
         
     }
 }
