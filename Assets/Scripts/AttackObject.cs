@@ -10,11 +10,14 @@ namespace FactWorld
         public float AttackRadius { get => _attackRadius; set => _attackRadius = value; }
         public float AttackNoise { get => _attackNoise; set => _attackNoise = value; }
         public float NoiseRadius { get => _noiseRadius; set => _noiseRadius = value; }
+        public string Description { get => _description; private set => _description = value; }
 
         [SerializeField] private GameObject _card;
         [SerializeField] private int _damage;
         [SerializeField] private float _attackRadius;
         [SerializeField] private float _attackNoise;
         [SerializeField] private float _noiseRadius;
+        [SerializeField] private string _description;
+                        
     }
 }

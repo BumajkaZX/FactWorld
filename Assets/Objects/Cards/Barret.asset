@@ -17,3 +17,4 @@ MonoBehaviour:
   _attackRadius: 7.5
   _attackNoise: 0.3
   _noiseRadius: 2.5
+  _description: Wow Text

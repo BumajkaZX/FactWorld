@@ -8,6 +8,7 @@ namespace FactWorld
 {
     public class UIButtons : MonoBehaviour
     {
+        #region params
         [SerializeField] private Button _attackButton;
         [SerializeField] private TextMeshProUGUI _textAttack;
         [SerializeField] private string _hideTextAttack;
@@ -29,6 +30,27 @@ namespace FactWorld
         private List<Vector3> defaultPosAction = new List<Vector3>();
         private bool isActiveAction;
 
+        [Space(50)]
+        [SerializeField] private float speedButtonCheck;
+        [SerializeField] private float scaleActiveCard;
+        [SerializeField] private float descriprionActiveOffset;
+        [SerializeField] private float descriptionActiveSpeed;
+        [SerializeField] private GameObject description;
+
+        private TMP_Text text;
+        private Vector3 desctiprionDefaultPos;
+        private bool isActive = true;
+        private CompositeDisposable disposible = new CompositeDisposable();
+        #endregion
+        private void Awake()
+        {
+            text = description.GetComponent<TMP_Text>();
+            CardCheckEvent.hideUICards.AddListener(Hide);
+            CardCheckEvent.desctiption.AddListener(DescriptionActive);
+            CardCheckEvent.speed = speedButtonCheck;
+            CardCheckEvent.scale = scaleActiveCard;
+            desctiprionDefaultPos = description.transform.localPosition;
+        }
         private void Start()
         {
             for (int i = 0; i < _guns.Count; i++)
@@ -40,6 +62,7 @@ namespace FactWorld
             {
                 defaultPosAction.Add(_actions[i].transform.localPosition);
             }
+            
         }
 
         public void Attack()
@@ -73,8 +96,6 @@ namespace FactWorld
             {
                     var gun = obj[i];
                     gun.transform.localPosition = isActive ? Vector3.Lerp(activePosMas[i], defaultPos[i],  t) :  Vector3.Lerp(defaultPos[i], activePosMas[i], t);
-                    
-                    print(t);
                     i++;
                     if (i >= obj.Count)
                     {
@@ -91,6 +112,29 @@ namespace FactWorld
             }).AddTo(disposables);
         }
 
-        
+        private void Hide(bool isActive)
+        {
+            _actionButton.gameObject.SetActive(isActive);
+            _attackButton.gameObject.SetActive(isActive);
+        }
+
+        private void DescriptionActive(string text)
+        {
+            this.text.SetText(text);
+            isActive = !isActive;
+            var t = 0f;
+            var activePos = description.transform.localPosition;
+            var newActivePos = new Vector3(desctiprionDefaultPos.x, desctiprionDefaultPos.y + descriprionActiveOffset, desctiprionDefaultPos.z);
+            Observable.EveryUpdate().Subscribe(_ => 
+            {
+                description.transform.localPosition = isActive ? Vector3.Lerp(activePos, desctiprionDefaultPos, t) : Vector3.Lerp(desctiprionDefaultPos, newActivePos, t);
+                t += Time.deltaTime * descriptionActiveSpeed;
+                if (t >= 1) 
+                {
+                    disposible.Clear();
+                }
+                
+            }).AddTo(disposible);
+        }
     }
 }

@@ -32,6 +32,10 @@ namespace FactWorld
         #endregion
         private void Awake()
         {
+            if (SystemInfo.supportsGyroscope)
+            {
+                CardCheckEvent.gyroEnable = true;
+            }
             Load();
             for (int i = 0; i < _activeHexSnL.Count; i++)
             {
@@ -84,7 +88,6 @@ namespace FactWorld
         }
         public void SetMainActiveHex(GameObject hex, float maxPoint, int ID)
         {
-            print(Enemies.Count);
             _disposables.Clear();
             ActiveObjectID = ID;
             MoveMainCharacter(_characterHex.transform.position, _activeHexDefaultPos - new Vector3(0, _mainCharacterOffset, 0), _mainCharacter);
@@ -95,8 +98,6 @@ namespace FactWorld
             LerpMove(_characterHex.transform.position, _pointToFollow.transform.position);
             EnableActiveHex(_characterHex.transform.position, maxPoint);
             GameEventManager.InverseTurn();
-            
-
         }
         public void Turn()
         {
