@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine.Events;
 using Cinemachine;
 
@@ -19,6 +20,9 @@ namespace FactWorld
 
         public static CinemachineVirtualCamera Camera;
 
+        public static int step = 0;
+    
+
         public static void InverseTurn()
         {
             turn = !turn;
@@ -26,6 +30,7 @@ namespace FactWorld
         public static void TurnStart()
         {
             Turn.Invoke();
+            step++;
         }
 
     }

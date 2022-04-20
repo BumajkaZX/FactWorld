@@ -9,7 +9,11 @@ namespace FactWorld
 
         public static UnityEvent<bool> hideUICards = new UnityEvent<bool>();
 
-        public static UnityEvent<string> desctiption = new UnityEvent<string>();
+        public static UnityEvent<string> description = new UnityEvent<string>();
+
+        public static UnityEvent attackButton = new UnityEvent();
+
+        public static CardCheck activeCard;
 
         public static float scale;
 
@@ -29,7 +33,12 @@ namespace FactWorld
 
         public static void DescriptionActive(string text)
         {
-            desctiption.Invoke(text);
+            description.Invoke(text);
+        }
+
+        public static void ActiveButton()
+        {
+            attackButton.Invoke();
         }
     }
 }

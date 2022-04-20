@@ -18,6 +18,14 @@ namespace FactWorld
         
         public abstract int ID { get; set; }
 
+        public abstract int DiedStep { get; set; }
+
+        public abstract int AliveStep { get; set; }
+
+        public abstract int StepsToAlive { get; set; }
+
+        public abstract int Regeneration { get; set; }
+
         public abstract float ActiveRadius { get; set; }
 
         public abstract float SoundRadius { get; set; }
@@ -29,14 +37,24 @@ namespace FactWorld
         public abstract Vector3 EnemyOffsetOnHex { get; set; }
         public abstract Vector3 Position { get; set; }
 
+        public abstract bool IsAlive { get; set; }
+
+       
+
         public virtual void Start()
         {
             if (Position != Vector3.zero) gameObject.transform.position = Position;
         }
         public virtual async Task PathFinding()
         {
-
+            if (!IsAlive)
+            {
+                Rebirth();
+                return;
+            }
             SoundFinding();
+            if (HP + Regeneration >= 100) HP = 100; 
+            else HP += Regeneration;
             List<Transform> availablePosition = new List<Transform>();
             Collider[] inRad = Physics.OverlapSphere(transform.position, ActiveRadius, MaskForHex); //Step 2.5
             for (int i = 0; i < inRad.Length; i++)
@@ -113,5 +131,23 @@ namespace FactWorld
 
         }
 
+        public virtual void Rebirth()
+        {        
+            AliveStep++;
+            if (AliveStep == StepsToAlive + DiedStep)
+            {
+                IsAlive = true;
+                HP = 20;
+            }       
+        }
+
+        public virtual void NotDieYet() 
+        {
+            if (HP <= 0)
+            {
+                IsAlive = false;
+                DiedStep = GameEventManager.step;
+            }
+        }
     }
 }

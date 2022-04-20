@@ -37,6 +37,8 @@ namespace FactWorld
         [SerializeField] private float descriptionActiveSpeed;
         [SerializeField] private GameObject description;
 
+        [Space(20)]
+        [SerializeField] private GameObject activeButton;
         private TMP_Text text;
         private Vector3 desctiprionDefaultPos;
         private bool isActive = true;
@@ -44,9 +46,11 @@ namespace FactWorld
         #endregion
         private void Awake()
         {
-            text = description.GetComponent<TMP_Text>();
+            CardCheckEvent.attackButton.AddListener(ActiveButton);
+            CardChangeEvent.gunChange.AddListener(GunsUpdate);
+            text = description.GetComponentInChildren<TMP_Text>();
             CardCheckEvent.hideUICards.AddListener(Hide);
-            CardCheckEvent.desctiption.AddListener(DescriptionActive);
+            CardCheckEvent.description.AddListener(DescriptionActive);
             CardCheckEvent.speed = speedButtonCheck;
             CardCheckEvent.scale = scaleActiveCard;
             desctiprionDefaultPos = description.transform.localPosition;
@@ -135,6 +139,46 @@ namespace FactWorld
                 }
                 
             }).AddTo(disposible);
+        }
+
+        private void GunsUpdate(List<AttackObject> guns)
+        {
+            for (int i = 0; i < _guns.Count; i++)
+            {
+                if (_guns[i].transform.childCount > 0)
+                {
+                    var childObj = _guns[i].transform.GetChild(0).gameObject;
+                    Destroy(childObj);
+                }
+                var newGun = Instantiate(guns[i].Card, Vector3.zero, Quaternion.identity);
+                newGun.transform.SetParent(_guns[i].transform);
+                newGun.transform.localPosition = Vector3.zero;
+                newGun.transform.localRotation = Quaternion.Euler(0, 0, 0);
+                
+            }
+        }
+
+        private void ActiveButton()
+        {
+            
+            var set = !activeButton.activeSelf;
+            if (set)
+            {
+                activeButton.GetComponent<Button>().onClick.AddListener(CardCheckEvent.activeCard.Use);
+                if (isActiveAttack)
+                {
+                    activeButton.GetComponent<Button>().onClick.AddListener(Attack);
+                }
+                if (isActiveAction)
+                {
+                    activeButton.GetComponent<Button>().onClick.AddListener(Action);
+                }
+            }
+            else
+            {
+                activeButton.GetComponent<Button>().onClick.RemoveAllListeners();
+            }
+            activeButton.SetActive(set);
         }
     }
 }

@@ -8,15 +8,22 @@ namespace FactWorld
     {
         public LayerMask PlayerMask { get => _playerMask; set => _playerMask = value; }
         public int HP { get => _hp; set => _hp = value; }
-        public List<GameObject> Guns { get => _guns; set => _guns = value; }
+        public List<AttackObject> Guns { get => _guns; set => _guns = value; }
 
         [SerializeField] private LayerMask _playerMask;
         [SerializeField] private int _hp;
-        [SerializeField] private List<GameObject> _guns;
+        [SerializeField] private List<AttackObject> _guns;
 
         private void Awake()
         {
             
         }
+
+        [ContextMenu("Set gun")]
+        private void NewGun()
+        {
+            CardChangeEvent.GunChange(Guns);
+        }
+        
     }
 }

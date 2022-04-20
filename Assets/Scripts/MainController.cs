@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.IO;
 using UniRx;
 using UnityEngine;
+using FactWorld.Save;
 
 namespace FactWorld
 {
@@ -25,17 +26,20 @@ namespace FactWorld
         [SerializeField] private List<EnemyBase> _enemies = new List<EnemyBase>();
         [SerializeField] private List<AttackObject> _guns = new List<AttackObject>();
         private GameObject _activeHex, _characterHex;
-        private ListPlaces _listPlaces = new ListPlaces();
+        private SaveFile _listPlaces = new SaveFile();
         private List<int> _activePlaces = new List<int>();
         private List<InteractWithField> _activeHexList = new List<InteractWithField>();
+        private List<InteractWithField> _attackHex = new List<InteractWithField>();
         private CompositeDisposable _disposables = new CompositeDisposable();
         #endregion
         private void Awake()
         {
+            CardActiveEvent.AcitveGunEvent.AddListener(EnableAttackHex);
             if (SystemInfo.supportsGyroscope)
             {
                 CardCheckEvent.gyroEnable = true;
             }
+            CardChangeEvent.attackObjects = _guns;
             Load();
             for (int i = 0; i < _activeHexSnL.Count; i++)
             {
@@ -141,6 +145,7 @@ namespace FactWorld
                     cl.InteractActive(true);
                     cl.ChildActivate(true);
                     cl.MeshActive(true);
+                    cl.SetIsAttack(false);
                     if (!_activePlaces.Contains(cl.GetID()))
                     {
                         _activePlaces.Add(cl.GetID());
@@ -149,6 +154,27 @@ namespace FactWorld
                 }
             }
             _characterHex.GetComponent<InteractWithField>().InteractActive(false);    
+        }
+        private void EnableAttackHex()
+        {
+            Collider[] inRad = Physics.OverlapSphere(_characterHex.transform.position, CardActiveEvent.radiusAttack, _hexMask); //Step 2.5
+            for (int i = 0; i < inRad.Length; i++)
+            {
+                    var cl = inRad[i].GetComponent<InteractWithField>();           
+                    cl.InteractActive(true);
+                    cl.MeshActive(true);
+                    if (cl.IsAttack()) _attackHex.Add(cl);
+            }
+            _characterHex.GetComponent<InteractWithField>().InteractActive(true);
+        }
+        public void DisableAttackHex()
+        {
+            for (int i = 0; i < _attackHex.Count; i++)
+            {
+                _attackHex[i].InteractActive(false);
+                _attackHex[i].MeshActive(false);
+            }
+            _characterHex.GetComponent<InteractWithField>().InteractActive(false);
         }
         private void RotateCam()
         {
@@ -211,7 +237,7 @@ namespace FactWorld
                 File.Create(path + "/Saves.json");
                 return;
             }
-            _listPlaces = JsonUtility.FromJson<ListPlaces>(File.ReadAllText(path + "/Saves.json"));
+            _listPlaces = JsonUtility.FromJson<SaveFile>(File.ReadAllText(path + "/Saves.json"));
             if (_listPlaces == null) return;
            
                 _mainCharacter.transform.position = _listPlaces.MainCharacterPosition;
@@ -246,9 +272,9 @@ namespace FactWorld
                     Enemies[i].Position = _listPlaces.EnemiesPosition[i];
                     Enemies[i].LoudestSoundPosition = _listPlaces.EnemiesLoudPosition[i];
                     Enemies[i].EnemyOffsetOnHex = _listPlaces.EnemiesOffsetOnHex[i];
-
+                    Enemies[i].IsAlive = _listPlaces.IsAlive[i];
                 }
-
+                GameEventManager.step = _listPlaces.Step;
 
 
         }
@@ -257,7 +283,7 @@ namespace FactWorld
         {
             await Task.Delay(2000);
             string path = Application.persistentDataPath + "/Saves";
-            var listPlaces = new ListPlaces();
+            var listPlaces = new SaveFile();
             var id = new List<int>();
             var damage = new List<int>();
             var hp = new List<int>();
@@ -267,6 +293,7 @@ namespace FactWorld
             var position = new List<Vector3>();
             var loudestPosition = new List<Vector3>();
             var offset = new List<Vector3>();
+            var isAlive = new List<bool>();
             for (int i = 0; i < Enemies.Count; i++)
             {
                 id.Add(Enemies[i].ID);
@@ -278,6 +305,7 @@ namespace FactWorld
                 position.Add(Enemies[i].Position);
                 loudestPosition.Add(Enemies[i].LoudestSoundPosition);
                 offset.Add(Enemies[i].EnemyOffsetOnHex);
+                isAlive.Add(Enemies[i].IsAlive);
                 
             }
             listPlaces.EnemiesID = id;
@@ -292,6 +320,8 @@ namespace FactWorld
             listPlaces.ActiveObject = ActiveObjectID;
             listPlaces.Places = _activePlaces;
             listPlaces.MainCharacterPosition = _mainCharacter.transform.position;
+            listPlaces.IsAlive = isAlive;
+            listPlaces.Step = GameEventManager.step;
             File.WriteAllText(path + "/Saves.json", JsonUtility.ToJson(listPlaces));
 
             await Task.Yield();

@@ -3,9 +3,13 @@ using UniRx;
 
 namespace FactWorld
 {
-    public class CardCheck : MonoBehaviour
+    public class CardCheck : MonoBehaviour, IObject
     {
+
         #region params
+        public int Damage { get => damage; set => damage = value; }
+        public float NoiseRadius { get => noiseRadius; set => noiseRadius = value; }
+
         private AttackObject attackObject;
         private Vector3 defaultPos;
         private Vector3 defaultScale;
@@ -16,10 +20,25 @@ namespace FactWorld
         private float speed;
         private CompositeDisposable disposables = new CompositeDisposable();
         private Gyroscope gyro;
+        private string description = "def";
+        private int damage;
+        private float noiseRadius;
+        
         #endregion
         private void Start()
         {
-            //attackObject = GetComponent<AttackObject>();
+            var name = gameObject.name.Replace("(Clone)","");
+            gameObject.name = name;
+            for (int i = 0; i < CardChangeEvent.attackObjects.Count; i++)
+            {
+                if (CardChangeEvent.attackObjects[i].Card.name == name)
+                {
+                    attackObject = CardChangeEvent.attackObjects[i];
+                    description = CardChangeEvent.attackObjects[i].Description;
+                    damage = CardChangeEvent.attackObjects[i].Damage;
+                    noiseRadius = CardChangeEvent.attackObjects[i].NoiseRadius;
+                }
+            }
             CardCheckEvent.hideUICards.AddListener(Hide);
             par = transform.parent.transform;
             defaultScale = transform.localScale;
@@ -36,18 +55,20 @@ namespace FactWorld
             if (isActive)
             {
                 CardCheckEvent.hideUICards.AddListener(Hide);
-                //CardCheckEvent.DescriptionActive(attackObject.Description);
+                CardCheckEvent.DescriptionActive(description);
                 ResetPosition();
                 return;
             }
             CardCheckEvent.hideUICards.RemoveListener(Hide);
             CardCheckEvent.Hide(false);
-            //CardCheckEvent.DescriptionActive(attackObject.Description);
+            CardCheckEvent.DescriptionActive(description);
             isActive = true;
             defaultPos = par.localPosition;
             var t = 0f;
             var newScale = defaultScale * scale;
+            CardCheckEvent.activeCard = this;
             CardCheckEvent.ResetPositionNActiveDescription();
+            CardCheckEvent.ActiveButton();
             CardCheckEvent.buttonCheck.AddListener(ResetPosition);
             defaultRotation = transform.localRotation;
             Observable.EveryUpdate().Subscribe(_ => 
@@ -79,7 +100,17 @@ namespace FactWorld
             
             }).AddTo(disposables);
         }
-
+        public void Use()
+        {
+            print("f");
+            CardCheckEvent.hideUICards.AddListener(Hide);
+            CardCheckEvent.DescriptionActive(description);
+            ResetPosition();
+            CardCheckEvent.Hide(false);
+            CardActiveEvent.radiusAttack = attackObject.AttackRadius;
+            CardActiveEvent.ResetHexPosition();
+            CardActiveEvent.ActiveCard = this;
+        }
         private void ResetPosition()
         {
             if (CardCheckEvent.gyroEnable)
@@ -92,6 +123,7 @@ namespace FactWorld
             var currentScale = transform.localScale;
             var currentRotation = transform.localRotation;
             var t = 0f;
+            CardCheckEvent.ActiveButton();
             CardCheckEvent.buttonCheck.RemoveListener(ResetPosition);
             Observable.EveryUpdate().Subscribe(_ =>
             {
@@ -115,5 +147,9 @@ namespace FactWorld
         {
             par.gameObject.SetActive(isActive);
         }
+    }
+
+    internal class SerializedFieldAttribute : System.Attribute
+    {
     }
 }

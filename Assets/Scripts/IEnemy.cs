@@ -17,6 +17,6 @@ namespace FactWorld
 
         float JumpStep { get; set; }
 
-        
+        void NotDieYet();
     }
 }
