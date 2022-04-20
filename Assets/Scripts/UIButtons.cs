@@ -9,80 +9,19 @@ namespace FactWorld
     public class UIButtons : MonoBehaviour
     {
         #region params
-        [SerializeField] private Button _attackButton;
-        [SerializeField] private TextMeshProUGUI _textAttack;
-        [SerializeField] private string _hideTextAttack;
-        [SerializeField] private string _activeTextAttack;
-        [SerializeField] private List<GameObject> _guns = new List<GameObject>();
-        [SerializeField] private Vector3 _activePosAttack;
-        [SerializeField] private float _speedAnimAttack;
-        private List<Vector3> defaultPosAttack = new List<Vector3>();
-        private bool isActiveAttack;
-        [Space(50)]
-
-        [SerializeField] private List<GameObject> _actions = new List<GameObject>();
-        [SerializeField] private Button _actionButton;
-        [SerializeField] private TextMeshProUGUI _textAction;
-        [SerializeField] private string _hideTextAction;
-        [SerializeField] private string _activeTextAction;
-        [SerializeField] private Vector3 _activePosAction;
-        [SerializeField] private float _speedAnimAction;
-        private List<Vector3> defaultPosAction = new List<Vector3>();
-        private bool isActiveAction;
-
-        [Space(50)]
-        [SerializeField] private float speedButtonCheck;
-        [SerializeField] private float scaleActiveCard;
-        [SerializeField] private float descriprionActiveOffset;
-        [SerializeField] private float descriptionActiveSpeed;
-        [SerializeField] private GameObject description;
-
-        [Space(20)]
-        [SerializeField] private GameObject activeButton;
-        private TMP_Text text;
-        private Vector3 desctiprionDefaultPos;
-        private bool isActive = true;
+       
         private CompositeDisposable disposible = new CompositeDisposable();
         #endregion
         private void Awake()
         {
-            CardCheckEvent.attackButton.AddListener(ActiveButton);
-            CardChangeEvent.gunChange.AddListener(GunsUpdate);
-            text = description.GetComponentInChildren<TMP_Text>();
-            CardCheckEvent.hideUICards.AddListener(Hide);
-            CardCheckEvent.description.AddListener(DescriptionActive);
-            CardCheckEvent.speed = speedButtonCheck;
-            CardCheckEvent.scale = scaleActiveCard;
-            desctiprionDefaultPos = description.transform.localPosition;
+            
         }
         private void Start()
         {
-            for (int i = 0; i < _guns.Count; i++)
-            {
-                defaultPosAttack.Add(_guns[i].transform.localPosition);
-            }
-
-            for (int i = 0; i < _actions.Count; i++)
-            {
-                defaultPosAction.Add(_actions[i].transform.localPosition);
-            }
+           
             
         }
 
-        public void Attack()
-        {
-            if (isActiveAction) return;
-            Move(_guns, _textAttack, _hideTextAttack, _activeTextAttack, _activePosAttack, defaultPosAttack, _speedAnimAttack, isActiveAttack, _attackButton);
-            isActiveAttack = !isActiveAttack;
-            
-        }
-
-        public void Action()
-        {
-            if (isActiveAttack) return;
-            Move(_actions, _textAction, _hideTextAction, _activeTextAction, _activePosAction, defaultPosAction, _speedAnimAction, isActiveAction, _actionButton);
-            isActiveAction = !isActiveAction;
-        }
 
         private void Move(List<GameObject> obj, TextMeshProUGUI text, string hideText, string activeText, Vector3 activePos, List<Vector3> defaultPos, float speedAnim, bool isActive, Button button)
         {
@@ -116,69 +55,6 @@ namespace FactWorld
             }).AddTo(disposables);
         }
 
-        private void Hide(bool isActive)
-        {
-            _actionButton.gameObject.SetActive(isActive);
-            _attackButton.gameObject.SetActive(isActive);
-        }
 
-        private void DescriptionActive(string text)
-        {
-            this.text.SetText(text);
-            isActive = !isActive;
-            var t = 0f;
-            var activePos = description.transform.localPosition;
-            var newActivePos = new Vector3(desctiprionDefaultPos.x, desctiprionDefaultPos.y + descriprionActiveOffset, desctiprionDefaultPos.z);
-            Observable.EveryUpdate().Subscribe(_ => 
-            {
-                description.transform.localPosition = isActive ? Vector3.Lerp(activePos, desctiprionDefaultPos, t) : Vector3.Lerp(desctiprionDefaultPos, newActivePos, t);
-                t += Time.deltaTime * descriptionActiveSpeed;
-                if (t >= 1) 
-                {
-                    disposible.Clear();
-                }
-                
-            }).AddTo(disposible);
-        }
-
-        private void GunsUpdate(List<AttackObject> guns)
-        {
-            for (int i = 0; i < _guns.Count; i++)
-            {
-                if (_guns[i].transform.childCount > 0)
-                {
-                    var childObj = _guns[i].transform.GetChild(0).gameObject;
-                    Destroy(childObj);
-                }
-                var newGun = Instantiate(guns[i].Card, Vector3.zero, Quaternion.identity);
-                newGun.transform.SetParent(_guns[i].transform);
-                newGun.transform.localPosition = Vector3.zero;
-                newGun.transform.localRotation = Quaternion.Euler(0, 0, 0);
-                
-            }
-        }
-
-        private void ActiveButton()
-        {
-            
-            var set = !activeButton.activeSelf;
-            if (set)
-            {
-                activeButton.GetComponent<Button>().onClick.AddListener(CardCheckEvent.activeCard.Use);
-                if (isActiveAttack)
-                {
-                    activeButton.GetComponent<Button>().onClick.AddListener(Attack);
-                }
-                if (isActiveAction)
-                {
-                    activeButton.GetComponent<Button>().onClick.AddListener(Action);
-                }
-            }
-            else
-            {
-                activeButton.GetComponent<Button>().onClick.RemoveAllListeners();
-            }
-            activeButton.SetActive(set);
-        }
     }
 }

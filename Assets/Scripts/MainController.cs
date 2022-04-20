@@ -13,33 +13,25 @@ namespace FactWorld
         #region params
         public int ActiveObjectID { get => _activeObjectID; private set => _activeObjectID = value; }
         public GameObject goTo { get => _characterHex; }
-        public List<EnemyBase> Enemies { get => _enemies; set => _enemies = value; }
         [SerializeField] private LayerMask _hexMask;
         [SerializeField] private float _radius, _mainCharacterOffset, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim;
         [SerializeField] private Vector3 _activePosition, _activeHexDefaultPos, _characterMoveUp;
         [SerializeField] private GameObject _mainCharacter, _pointToFollow, _islandCentre;
         [SerializeField] private CinemachineVirtualCamera _cinemachine;
         [SerializeField] private List<GameObject> _activeHexSnL = new List<GameObject>();
-        [SerializeField] private List<EnemyBase> _enemiesJumpStepNSave = new List<EnemyBase>();
-        [SerializeField] private List<float> jumpStep = new List<float>();
         [SerializeField] private int _activeObjectID;
-        [SerializeField] private List<EnemyBase> _enemies = new List<EnemyBase>();
-        [SerializeField] private List<AttackObject> _guns = new List<AttackObject>();
         private GameObject _activeHex, _characterHex;
         private SaveFile _listPlaces = new SaveFile();
         private List<int> _activePlaces = new List<int>();
         private List<InteractWithField> _activeHexList = new List<InteractWithField>();
-        private List<InteractWithField> _attackHex = new List<InteractWithField>();
         private CompositeDisposable _disposables = new CompositeDisposable();
         #endregion
         private void Awake()
         {
-            CardActiveEvent.AcitveGunEvent.AddListener(EnableAttackHex);
             if (SystemInfo.supportsGyroscope)
             {
-                CardCheckEvent.gyroEnable = true;
+
             }
-            CardChangeEvent.attackObjects = _guns;
             Load();
             for (int i = 0; i < _activeHexSnL.Count; i++)
             {
@@ -53,29 +45,10 @@ namespace FactWorld
                     cl.SetActive(true);
                 }
             }
-            for (int i = 0; i < _enemiesJumpStepNSave.Count; i++)
-            {
-                _enemiesJumpStepNSave[i].JumpStep = jumpStep[i] + _MaxPointHex;
-            }
             _cinemachine.Follow = _pointToFollow.transform;
             _cinemachine.LookAt = _pointToFollow.transform;
-            GameEventManager.MainController = this;
-            GameEventManager.Camera = _cinemachine;
-            GameEventManager.Turn.AddListener(EnemyTurn);
+            GameManager.mainController = this;
 
-
-        }
-        public async void EnemyTurn()
-        {
-           
-            for (int i = 0; i < _enemies.Count; i++)
-            {
-               await _enemies[i].PathFinding();
-            }
-            await Task.Yield();
-            await Save();
-            GameEventManager.InverseTurn();
-            
         }
         public void SetStartHexParams(GameObject hex, float maxPoint)
         {
@@ -101,11 +74,6 @@ namespace FactWorld
             RotateCam();
             LerpMove(_characterHex.transform.position, _pointToFollow.transform.position);
             EnableActiveHex(_characterHex.transform.position, maxPoint);
-            GameEventManager.InverseTurn();
-        }
-        public void Turn()
-        {
-            GameEventManager.TurnStart();
         }
         public void UpHex(GameObject hex, Vector3 defaultPosition)
         {
@@ -152,28 +120,8 @@ namespace FactWorld
                     }
                     _activeHexList.Add(cl);
                 }
-            }
-            _characterHex.GetComponent<InteractWithField>().InteractActive(false);    
-        }
-        private void EnableAttackHex()
-        {
-            Collider[] inRad = Physics.OverlapSphere(_characterHex.transform.position, CardActiveEvent.radiusAttack, _hexMask); //Step 2.5
-            for (int i = 0; i < inRad.Length; i++)
-            {
-                    var cl = inRad[i].GetComponent<InteractWithField>();           
-                    cl.InteractActive(true);
-                    cl.MeshActive(true);
-                    if (cl.IsAttack()) _attackHex.Add(cl);
-            }
-            _characterHex.GetComponent<InteractWithField>().InteractActive(true);
-        }
-        public void DisableAttackHex()
-        {
-            for (int i = 0; i < _attackHex.Count; i++)
-            {
-                _attackHex[i].InteractActive(false);
-                _attackHex[i].MeshActive(false);
-            }
+               
+            }    
             _characterHex.GetComponent<InteractWithField>().InteractActive(false);
         }
         private void RotateCam()
@@ -215,7 +163,6 @@ namespace FactWorld
                 if (t >= 1)
                 {
                     dis.Clear();
-                    GameEventManager.TurnStart();
                 }
 
             }).AddTo(dis);
@@ -256,75 +203,21 @@ namespace FactWorld
                             ActiveObjectID = _listPlaces.ActiveObject;
 
                         }
-
-
                     }
 
                 }
-                for (int i = 0; i < Enemies.Count; i++)
-                {
-                    if (Enemies[i].ID != _listPlaces.EnemiesID[i]) return;
-                    Enemies[i].Damage = _listPlaces.EnemiesDamage[i];
-                    Enemies[i].HP = _listPlaces.EnemiesHP[i];
-                    Enemies[i].ActiveRadius = _listPlaces.EnemiesActiveRadius[i];
-                    Enemies[i].SoundRadius = _listPlaces.EnemiesSoundRadius[i];
-                    Enemies[i].JumpStep =_listPlaces.EnemiesJumpStep[i];
-                    Enemies[i].Position = _listPlaces.EnemiesPosition[i];
-                    Enemies[i].LoudestSoundPosition = _listPlaces.EnemiesLoudPosition[i];
-                    Enemies[i].EnemyOffsetOnHex = _listPlaces.EnemiesOffsetOnHex[i];
-                    Enemies[i].IsAlive = _listPlaces.IsAlive[i];
-                }
-                GameEventManager.step = _listPlaces.Step;
-
 
         }
-
-        public async Task Save()
+        [ContextMenu("Save")]
+        public void Save()
         {
-            await Task.Delay(2000);
+            
             string path = Application.persistentDataPath + "/Saves";
             var listPlaces = new SaveFile();
-            var id = new List<int>();
-            var damage = new List<int>();
-            var hp = new List<int>();
-            var activeRadius = new List<float>();
-            var soundRadius = new List<float>();
-            var jumpStep = new List<float>();
-            var position = new List<Vector3>();
-            var loudestPosition = new List<Vector3>();
-            var offset = new List<Vector3>();
-            var isAlive = new List<bool>();
-            for (int i = 0; i < Enemies.Count; i++)
-            {
-                id.Add(Enemies[i].ID);
-                damage.Add(Enemies[i].Damage);
-                hp.Add(Enemies[i].HP);
-                activeRadius.Add(Enemies[i].ActiveRadius);
-                soundRadius.Add(Enemies[i].SoundRadius);
-                jumpStep.Add(Enemies[i].JumpStep);
-                position.Add(Enemies[i].Position);
-                loudestPosition.Add(Enemies[i].LoudestSoundPosition);
-                offset.Add(Enemies[i].EnemyOffsetOnHex);
-                isAlive.Add(Enemies[i].IsAlive);
-                
-            }
-            listPlaces.EnemiesID = id;
-            listPlaces.EnemiesDamage = damage;
-            listPlaces.EnemiesHP = hp;
-            listPlaces.EnemiesActiveRadius = activeRadius;
-            listPlaces.EnemiesSoundRadius = soundRadius;
-            listPlaces.EnemiesJumpStep = jumpStep;
-            listPlaces.EnemiesPosition = position;
-            listPlaces.EnemiesLoudPosition = loudestPosition;
-            listPlaces.EnemiesOffsetOnHex = offset;
-            listPlaces.ActiveObject = ActiveObjectID;
             listPlaces.Places = _activePlaces;
             listPlaces.MainCharacterPosition = _mainCharacter.transform.position;
-            listPlaces.IsAlive = isAlive;
-            listPlaces.Step = GameEventManager.step;
+            listPlaces.ActiveObject = _activeObjectID;
             File.WriteAllText(path + "/Saves.json", JsonUtility.ToJson(listPlaces));
-
-            await Task.Yield();
             
         }
         [ContextMenu("Clear Save")]
@@ -346,10 +239,5 @@ namespace FactWorld
             _activeHexSnL.Clear();
         } 
 
-        [ContextMenu("Clear Enemies List")]
-        public void ClearEnemyList()
-        {
-            Enemies.Clear();
-        }
     }
 }

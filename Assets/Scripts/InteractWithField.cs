@@ -16,7 +16,6 @@ namespace FactWorld
         private Vector3 _offset;
         private MeshRenderer _meshRenderer;
         private MainController _mainController;
-        private CinemachineVirtualCamera _camera;
         private CompositeDisposable _disposables = new CompositeDisposable();
         private GameObject _cross;
         private bool isAttack = true;
@@ -25,22 +24,19 @@ namespace FactWorld
 
         private void Awake()
         {
-            CardActiveEvent.AcitveGunEvent.AddListener(ResetPosition);
-            _cross = transform.GetChild(0).gameObject;
             _defaultPosition = gameObject.transform.position;
             _meshRenderer = GetComponent<MeshRenderer>();
             
         }
         private void Start()
         {
-            _camera = GameEventManager.Camera;
-            _mainController = GameEventManager.MainController;
+            _mainController = GameManager.mainController;
         }
        
         private void OnMouseUpAsButton()
         {
             
-                if (_canBeInteract && !GameEventManager.WhichTurn && CardActiveEvent.ActiveCard == null)
+                if (_canBeInteract)
                 {
                     if (_set)
                     {
@@ -59,36 +55,6 @@ namespace FactWorld
             
             
         }
-        private void OnMouseEnter()
-        {
-            if (CardActiveEvent.ActiveCard != null && _canBeInteract) _cross.SetActive(true);
-
-        }
-        private void OnMouseUp()
-        {
-            if (CardActiveEvent.ActiveCard != null)
-            {
-                if (CardActiveEvent.IsAttack)
-                {
-                    var noise = Instantiate(Noise.noiseController.noisePrefab, transform.position, Quaternion.identity);
-                    noise.GetComponent<Sound>();
-                    Noise.noiseController.NoiseList.Add(noise);
-                    Attack();
-                }
-                
-                _cross.SetActive(false);
-                GameEventManager.InverseTurn();
-                GameEventManager.TurnStart();
-                CardActiveEvent.ActiveCard = null;
-                CardCheckEvent.Hide(true);
-                _mainController.DisableAttackHex();
-            }  
-        }
-
-        private void OnMouseExit()
-        {
-            if (CardActiveEvent.ActiveCard != null) _cross.SetActive(false);
-        }
         public void ResetPosition()
         {
             _set = false;
@@ -102,38 +68,6 @@ namespace FactWorld
             }).AddTo(_disposables);
         }
 
-        [ContextMenu("Set Enemy Position")]
-        private void SetEnemy()
-        {
-            var x = Physics.OverlapSphere(transform.position, 1f, _enemy);
-            
-            foreach (var b in x)
-            {
-                var offset = b.gameObject.GetComponent<IEnemy>().EnemyOffsetOnHex;
-                var f =  b.gameObject.GetComponent<IEnemy>();
-                if (f != null && offset != null)
-                {
-                    b.gameObject.transform.position = transform.position - offset;
-                    f.Position = b.transform.position;
-                    b.gameObject.GetComponent<Collider>().enabled = false;
-                }
-            }
-           
-        }
-        private void Attack()
-        {
-            var x = Physics.OverlapSphere(transform.position, 1f, _enemy);
-            print(x[0].GetComponent<IEnemy>().HP);
-            if (x.Length > 1)
-            {
-                var random = Random.Range(0, x.Length);
-                x[random].GetComponent<IEnemy>().HP -= CardActiveEvent.ActiveCard.Damage;
-                x[random].GetComponent<IEnemy>().NotDieYet();
-            }
-            x[0].GetComponent<IEnemy>().HP -= CardActiveEvent.ActiveCard.Damage;
-            x[0].GetComponent<IEnemy>().NotDieYet();
-
-        }
         #region incaps
         public bool IsActivePosition()
         {
