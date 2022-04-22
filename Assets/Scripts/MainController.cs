@@ -13,13 +13,14 @@ namespace FactWorld
         #region params
         public int ActiveObjectID { get => _activeObjectID; private set => _activeObjectID = value; }
         public GameObject goTo { get => _characterHex; }
-        [SerializeField] private LayerMask _hexMask;
-        [SerializeField] private float _radius, _mainCharacterOffset, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim;
+        [SerializeField] private LayerMask _hexMask, _enemyMask;
+        [SerializeField] private float _radius, _mainCharacterOffset, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim, _enemyFindRadius;
         [SerializeField] private Vector3 _activePosition, _activeHexDefaultPos, _characterMoveUp;
         [SerializeField] private GameObject _mainCharacter, _pointToFollow, _islandCentre;
         [SerializeField] private CinemachineVirtualCamera _cinemachine;
         [SerializeField] private List<GameObject> _activeHexSnL = new List<GameObject>();
         [SerializeField] private int _activeObjectID;
+        [SerializeField] private Material _fogOfWarMat;
         private GameObject _activeHex, _characterHex;
         private SaveFile _listPlaces = new SaveFile();
         private List<int> _activePlaces = new List<int>();
@@ -32,6 +33,7 @@ namespace FactWorld
             {
 
             }
+            GameManager.Fight.AddListener(BeforeFight);
             Load();
             for (int i = 0; i < _activeHexSnL.Count; i++)
             {
@@ -45,8 +47,7 @@ namespace FactWorld
                     cl.SetActive(true);
                 }
             }
-            _cinemachine.Follow = _pointToFollow.transform;
-            _cinemachine.LookAt = _pointToFollow.transform;
+            SetCamFollow(_pointToFollow.transform);
             GameManager.mainController = this;
 
         }
@@ -74,6 +75,12 @@ namespace FactWorld
             RotateCam();
             LerpMove(_characterHex.transform.position, _pointToFollow.transform.position);
             EnableActiveHex(_characterHex.transform.position, maxPoint);
+            
+        }
+        private void SetCamFollow(Transform followPoint)
+        {
+            _cinemachine.Follow = followPoint;
+            _cinemachine.LookAt = followPoint;
         }
         public void UpHex(GameObject hex, Vector3 defaultPosition)
         {
@@ -101,6 +108,11 @@ namespace FactWorld
                 _activeHexList[i].MeshActive(false);
                 _activeHexList[i].InteractActive(false);
             }
+        }
+        private void FindEnemyOnHex(Vector3 activeHex)
+        {
+            Collider[] inRad = Physics.OverlapSphere(activeHex, _enemyFindRadius, _enemyMask);
+            if (inRad.Length >= 1) GameManager.StartFight();
         }
         private void EnableActiveHex(Vector3 activeHex, float maxPointActiveHex)
         {
@@ -157,15 +169,21 @@ namespace FactWorld
             middle += _characterMoveUp;
             Observable.EveryFixedUpdate().Subscribe(_ =>
             {
-
                 character.transform.position = Vector3.Lerp(Vector3.Lerp(from, middle, t), Vector3.Lerp(middle, goTo, t), t);
                 t += Time.fixedDeltaTime * _characterMoveSpeedAnim;
                 if (t >= 1)
-                {
+                {     
                     dis.Clear();
+                    FindEnemyOnHex(_characterHex.transform.position);
                 }
 
             }).AddTo(dis);
+        }
+
+      
+        private void BeforeFight()
+        {
+             
         }
 
         #region SaveNLoad

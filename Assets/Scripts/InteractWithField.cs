@@ -118,11 +118,6 @@ namespace FactWorld
         {
             _offset = new Vector3(0, offset, 0);
         }
-
-        public bool IsAttack()
-        {
-            return isAttack;
-        }
         public void SetIsAttack(bool attack)
         {
             isAttack = attack; 
