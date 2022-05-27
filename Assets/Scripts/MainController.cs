@@ -14,8 +14,8 @@ namespace FactWorld
         public int ActiveObjectID { get => _activeObjectID; private set => _activeObjectID = value; }
         public GameObject goTo { get => _characterHex; }
         [SerializeField] private LayerMask _hexMask, _enemyMask;
-        [SerializeField] private float _radius, _mainCharacterOffset, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim, _enemyFindRadius;
-        [SerializeField] private Vector3 _activePosition, _activeHexDefaultPos, _characterMoveUp;
+        [SerializeField] private float _radius, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim, _enemyFindRadius;
+        [SerializeField] private Vector3 _activePosition, _activeHexDefaultPos, _characterMoveUp, _defaultFollowPointPosition, _mainCharacterOffset, _defaultCinemachineOffset;
         [SerializeField] private GameObject _mainCharacter, _pointToFollow, _islandCentre;
         [SerializeField] private CinemachineVirtualCamera _cinemachine;
         [SerializeField] private List<GameObject> _activeHexSnL = new List<GameObject>();
@@ -41,7 +41,7 @@ namespace FactWorld
                 if (cl.GetID() == ActiveObjectID)
                 {
                     var offset = cl.GetOffset();
-                    _mainCharacter.transform.position = _activeHexSnL[i].transform.position - new Vector3(0, _mainCharacterOffset - 0.1f, 0);
+                    _mainCharacter.transform.position = _activeHexSnL[i].transform.position - _mainCharacterOffset + new Vector3(0, 0.13f,0);
                     SetStartHexParams(_activeHexSnL[i], cl.GetMaxPoint());
                     cl.InteractActive(false);
                     cl.SetActive(true);
@@ -68,19 +68,14 @@ namespace FactWorld
         {
             _disposables.Clear();
             ActiveObjectID = ID;
-            MoveMainCharacter(_characterHex.transform.position, _activeHexDefaultPos - new Vector3(0, _mainCharacterOffset, 0), _mainCharacter);
+            MoveMainCharacter(_characterHex.transform.position, _activeHexDefaultPos - _mainCharacterOffset, _mainCharacter);
             _characterHex = hex;
             _characterHex.transform.position = _activeHexDefaultPos;
             DisableMeshRendererActiveChild();
             RotateCam();
             LerpMove(_characterHex.transform.position, _pointToFollow.transform.position);
             EnableActiveHex(_characterHex.transform.position, maxPoint);
-            
-        }
-        private void SetCamFollow(Transform followPoint)
-        {
-            _cinemachine.Follow = followPoint;
-            _cinemachine.LookAt = followPoint;
+
         }
         public void UpHex(GameObject hex, Vector3 defaultPosition)
         {
@@ -101,6 +96,12 @@ namespace FactWorld
 
             }).AddTo(_disposables);
         }
+        private void SetCamFollow(Transform followPoint)
+        {
+            _cinemachine.Follow = followPoint;
+            _cinemachine.LookAt = followPoint;
+        }
+        
         private void DisableMeshRendererActiveChild()
         {
             for (int i = 0; i < _activeHexList.Count; i++)
@@ -174,7 +175,7 @@ namespace FactWorld
                 if (t >= 1)
                 {     
                     dis.Clear();
-                    FindEnemyOnHex(_characterHex.transform.position);
+                    FindEnemyOnHex(_activeHex.transform.position);
                 }
 
             }).AddTo(dis);
