@@ -8,17 +8,13 @@ namespace FactWorld.Tools
     public class VoronoiFix : MonoBehaviour
     {
         #region params
-        [SerializeField]
-        int _seed, _dim;
-        [SerializeField]
-        float _lColor;
-        [SerializeField]
-        IslandGen _isGen;
-        [SerializeField]
-        bool _InvertColor, _Divide;
+        [SerializeField] int _seed, _dim;
+        [SerializeField] float _lColor;
+        [SerializeField] IslandGen _isGen;
+        [SerializeField] bool _InvertColor, _Divide;
         #endregion
         [ContextMenu("Generate Texture")]
-        void Create()
+        public void Create()
         {
             _seed = _isGen.GetSeed();
             _dim = _isGen.GetDim();

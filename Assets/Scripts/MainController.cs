@@ -5,187 +5,104 @@ using System.IO;
 using UniRx;
 using UnityEngine;
 using FactWorld.Save;
+using FactWorld.Tools;
 
 namespace FactWorld
 {
     public class MainController : MonoBehaviour
     {
         #region params
-        public int ActiveObjectID { get => _activeObjectID; private set => _activeObjectID = value; }
-        public GameObject goTo { get => _characterHex; }
-        [SerializeField] private LayerMask _hexMask, _enemyMask;
-        [SerializeField] private float _radius, _MaxPointHex, _activeHexSpeedAnim, _characterMoveSpeedAnim, _enemyFindRadius;
-        [SerializeField] private Vector3 _activePosition, _activeHexDefaultPos, _characterMoveUp, _defaultFollowPointPosition, _mainCharacterOffset, _defaultCinemachineOffset;
-        [SerializeField] private GameObject _mainCharacter, _pointToFollow, _islandCentre;
+        public Vector3 ActiveHexDefaultPos { get => _activeHexDefaultPos; private set => _activeHexDefaultPos = value; }
+        [SerializeField] private LayerMask _hexMask;
+        [SerializeField] private float _radius, _MaxPointHex, _activeHexSpeedAnim, _speedMovement, _speedRotation, _scrollSpeed, _minYLookCam, _maxYLookCam;
+        [SerializeField] private Vector3  _activeHexDefaultPos;
         [SerializeField] private CinemachineVirtualCamera _cinemachine;
         [SerializeField] private List<GameObject> _activeHexSnL = new List<GameObject>();
-        [SerializeField] private int _activeObjectID;
-        [SerializeField] private Material _fogOfWarMat;
-        private GameObject _activeHex, _characterHex;
+        [SerializeField, Tooltip("1/n of current screen height")] private int _partOfScreenForRotation;
+        [SerializeField] private Transform _pointToFollow;
+        private Camera mainCamera;
         private SaveFile _listPlaces = new SaveFile();
         private List<int> _activePlaces = new List<int>();
-        private List<InteractWithField> _activeHexList = new List<InteractWithField>();
         private CompositeDisposable _disposables = new CompositeDisposable();
         #endregion
         private void Awake()
         {
+            mainCamera = Camera.main;
             if (SystemInfo.supportsGyroscope)
             {
 
             }
-            GameManager.Fight.AddListener(BeforeFight);
-            Load();
-            for (int i = 0; i < _activeHexSnL.Count; i++)
+            GameManager.activeHexPosition = ActiveHexDefaultPos;
+            GameManager.activeHexAnimationSpeed = _activeHexSpeedAnim;
+        }
+
+        private void Start()
+        {
+            _cinemachine.Follow = _pointToFollow;
+            _cinemachine.LookAt = _pointToFollow;
+            var cinemachineComponents = _cinemachine.GetCinemachineComponent<CinemachineTransposer>();
+#if UNITY_WIN
+            Observable.EveryFixedUpdate().Subscribe(_ => 
             {
-                var cl = _activeHexSnL[i].GetComponent<InteractWithField>();
-                if (cl.GetID() == ActiveObjectID)
-                {
-                    var offset = cl.GetOffset();
-                    _mainCharacter.transform.position = _activeHexSnL[i].transform.position - _mainCharacterOffset + new Vector3(0, 0.13f,0);
-                    SetStartHexParams(_activeHexSnL[i], cl.GetMaxPoint());
-                    cl.InteractActive(false);
-                    cl.SetActive(true);
-                }
-            }
-            SetCamFollow(_pointToFollow.transform);
-            GameManager.mainController = this;
-
-        }
-        public void SetStartHexParams(GameObject hex, float maxPoint)
-        {
-            _activeHex = hex;
-            _characterHex = hex;
-            _activeHexDefaultPos = hex.transform.position;
-            _pointToFollow.transform.position = hex.transform.position;
-            _characterHex = hex;
-            _characterHex.transform.position = _activeHexDefaultPos;
-            DisableMeshRendererActiveChild();
-            RotateCam();
-            LerpMove(_characterHex.transform.position, _pointToFollow.transform.position);
-            EnableActiveHex(_characterHex.transform.position, maxPoint);
-        }
-        public void SetMainActiveHex(GameObject hex, float maxPoint, int ID)
-        {
-            _disposables.Clear();
-            ActiveObjectID = ID;
-            MoveMainCharacter(_characterHex.transform.position, _activeHexDefaultPos - _mainCharacterOffset, _mainCharacter);
-            _characterHex = hex;
-            _characterHex.transform.position = _activeHexDefaultPos;
-            DisableMeshRendererActiveChild();
-            RotateCam();
-            LerpMove(_characterHex.transform.position, _pointToFollow.transform.position);
-            EnableActiveHex(_characterHex.transform.position, maxPoint);
-
-        }
-        public void UpHex(GameObject hex, Vector3 defaultPosition)
-        {
-
-            _activeHex.GetComponent<InteractWithField>().ResetPosition();
-            _disposables.Clear();
-            _activeHex = hex;
-            _activeHexDefaultPos = defaultPosition;
-            var up = 0f;
-            var goTo = _activeHex.transform.position + _activePosition;
-            Observable.EveryFixedUpdate().Subscribe(_ =>
-            {
-
-                _activeHex.transform.position = Vector3.Lerp(_activeHex.transform.position, goTo, up);
-                up += Time.fixedDeltaTime * _activeHexSpeedAnim;
-                if (up >= 1)
-                    _disposables.Clear();
-
+                var dir = new Vector3(Input.GetAxis("Horizontal") * _speedMovement, 0, Input.GetAxis("Vertical") * _speedMovement);
+                _pointToFollow.Translate(dir);
+                var rot = Quaternion.Euler(new Vector3(0, Input.GetAxis("Rotation") * _speedRotation, 0)) * _pointToFollow.rotation;
+                _pointToFollow.rotation = rot;
+                var scroll = Input.GetAxis("Mouse ScrollWheel") * _scrollSpeed;
+                if(cinemachineComponents.m_FollowOffset.y + scroll < _maxYLookCam && cinemachineComponents.m_FollowOffset.y + scroll > _minYLookCam)
+                cinemachineComponents.m_FollowOffset = new Vector3(cinemachineComponents.m_FollowOffset.x, cinemachineComponents.m_FollowOffset.y + scroll, cinemachineComponents.m_FollowOffset.z);
             }).AddTo(_disposables);
-        }
-        private void SetCamFollow(Transform followPoint)
-        {
-            _cinemachine.Follow = followPoint;
-            _cinemachine.LookAt = followPoint;
-        }
-        
-        private void DisableMeshRendererActiveChild()
-        {
-            for (int i = 0; i < _activeHexList.Count; i++)
+#endif
+#if UNITY_ANDROID
+            var activeZoneForRotation = Screen.height / _partOfScreenForRotation;
+            var touch1 = new Vector2();
+            var touch2 = new Vector2();
+            var pastDifference = 0f;
+            Observable.EveryUpdate().Subscribe(_ =>
             {
-                _activeHexList[i].MeshActive(false);
-                _activeHexList[i].InteractActive(false);
-            }
-        }
-        private void FindEnemyOnHex(Vector3 activeHex)
-        {
-            Collider[] inRad = Physics.OverlapSphere(activeHex, _enemyFindRadius, _enemyMask);
-            if (inRad.Length >= 1) GameManager.StartFight();
-        }
-        private void EnableActiveHex(Vector3 activeHex, float maxPointActiveHex)
-        {
-            Collider[] inRad = Physics.OverlapSphere(activeHex, _radius, _hexMask); //Step 2.5
-            for (int i = 0; i < inRad.Length; i++)
-            {
-                var cl = inRad[i].GetComponent<InteractWithField>();
-                if (cl.GetMaxPoint() <= maxPointActiveHex + _MaxPointHex)
+                if (Input.touchCount >= 2 && Input.anyKeyDown )
                 {
-                    cl.InteractActive(true);
-                    cl.ChildActivate(true);
-                    cl.MeshActive(true);
-                    cl.SetIsAttack(false);
-                    if (!_activePlaces.Contains(cl.GetID()))
+                    touch1 = Input.touches[0].position;
+                    touch2 = Input.touches[1].position;
+                    pastDifference = Vector2.Distance(touch1, touch2) / Screen.height;
+                }
+                if (Input.touchCount < 2 && Input.anyKey )
+                {
+                    var touch = Input.touches[0];
+                    if (touch.position.y <= activeZoneForRotation)
                     {
-                        _activePlaces.Add(cl.GetID());
+                        var rot = Quaternion.Euler(_pointToFollow.rotation.x, (touch.deltaPosition.x * _speedRotation / 10), _pointToFollow.rotation.z) * _pointToFollow.rotation;
+                        _pointToFollow.rotation = rot;
                     }
-                    _activeHexList.Add(cl);
+                    if (touch.position.y > (float)activeZoneForRotation)
+                    {
+                        var dir = touch.deltaPosition * _speedMovement / 10;
+                        _pointToFollow.Translate(new Vector3(-dir.x, 0, -dir.y));
+                    }
+                
                 }
-               
-            }    
-            _characterHex.GetComponent<InteractWithField>().InteractActive(false);
-        }
-        private void RotateCam()
-        {
-            var t = 0f;
-            var from = _pointToFollow.transform.rotation;
-            var target = Quaternion.LookRotation(_islandCentre.transform.position - _pointToFollow.transform.position);
-            Observable.EveryFixedUpdate().Subscribe(_ =>
-            {
-
-                _pointToFollow.transform.rotation = Quaternion.Slerp(from, target, t);
-                t += Time.fixedDeltaTime;
-
-            }).AddTo(_disposables);
-        }
-        private void LerpMove(Vector3 goTo, Vector3 from)
-        {
-            var t = 0f;
-            Observable.EveryFixedUpdate().Subscribe(_ =>
-            {
-                _pointToFollow.transform.position = Vector3.Lerp(from, goTo, t);
-                t += Time.fixedDeltaTime * 0.5f;
-                if (t >= 1)
-                    _disposables.Clear();
-
-            }).AddTo(_disposables);
-        }
-        private void MoveMainCharacter(Vector3 from, Vector3 goTo, GameObject character)
-        {
-            CompositeDisposable dis = new CompositeDisposable();
-            var t = 0f;
-            var middle = Vector3.Lerp(from, goTo, 0.5f);
-            middle += _characterMoveUp;
-            Observable.EveryFixedUpdate().Subscribe(_ =>
-            {
-                character.transform.position = Vector3.Lerp(Vector3.Lerp(from, middle, t), Vector3.Lerp(middle, goTo, t), t);
-                t += Time.fixedDeltaTime * _characterMoveSpeedAnim;
-                if (t >= 1)
-                {     
-                    dis.Clear();
-                    FindEnemyOnHex(_activeHex.transform.position);
+                else if(Input.touchCount >= 2 && Input.anyKey)
+                {
+                    touch1 = Input.touches[0].position;
+                    touch2 = Input.touches[1].position;
+                    var currentDifference = Vector2.Distance(touch1, touch2) / Screen.height;
+                    var normalizedDifference = pastDifference - currentDifference * _scrollSpeed;
+                    if(pastDifference > currentDifference && normalizedDifference + cinemachineComponents.m_FollowOffset.y <= _maxYLookCam)
+                    {
+                        cinemachineComponents.m_FollowOffset = new Vector3(cinemachineComponents.m_FollowOffset.x, cinemachineComponents.m_FollowOffset.y - normalizedDifference, cinemachineComponents.m_FollowOffset.z);
+                    }
+                    else if(pastDifference < currentDifference && normalizedDifference + cinemachineComponents.m_FollowOffset.y >= _minYLookCam)
+                    {
+                        cinemachineComponents.m_FollowOffset = new Vector3(cinemachineComponents.m_FollowOffset.x, cinemachineComponents.m_FollowOffset.y + normalizedDifference, cinemachineComponents.m_FollowOffset.z);
+                    }
+                    pastDifference = Vector2.Distance(touch1, touch2) / Screen.height;
                 }
-
-            }).AddTo(dis);
+            
+            }).AddTo(this); //Movement
+#endif
         }
 
-      
-        private void BeforeFight()
-        {
-             
-        }
+
 
         #region SaveNLoad
         [ContextMenu("Load")]
@@ -204,39 +121,14 @@ namespace FactWorld
                 return;
             }
             _listPlaces = JsonUtility.FromJson<SaveFile>(File.ReadAllText(path + "/Saves.json"));
-            if (_listPlaces == null) return;
-           
-                _mainCharacter.transform.position = _listPlaces.MainCharacterPosition;
-                _activePlaces = _listPlaces.Places;
-                for (int i = 0; i < _activeHexSnL.Count; i++)
-                {
-                    for (int v = 0; v < _activePlaces.Count; v++)
-                    {
-                        var c = _activeHexSnL[i].GetComponent<InteractWithField>();
-                        if (c.GetID() == _activePlaces[v])
-                        {
-                            c.ChildActivate(true);
-                        }
-                        if (c.GetID() == _listPlaces.ActiveObject)
-                        {
-                            ActiveObjectID = _listPlaces.ActiveObject;
-
-                        }
-                    }
-
-                }
 
         }
         [ContextMenu("Save")]
         public void Save()
         {
-            
+
             string path = Application.persistentDataPath + "/Saves";
-            var listPlaces = new SaveFile();
-            listPlaces.Places = _activePlaces;
-            listPlaces.MainCharacterPosition = _mainCharacter.transform.position;
-            listPlaces.ActiveObject = _activeObjectID;
-            File.WriteAllText(path + "/Saves.json", JsonUtility.ToJson(listPlaces));
+            //File.WriteAllText(path + "/Saves.json", JsonUtility.ToJson());
             
         }
         [ContextMenu("Clear Save")]

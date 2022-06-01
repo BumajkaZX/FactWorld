@@ -8,13 +8,16 @@ namespace FactWorld
     public static class GameManager 
     {
         public static MainController mainController;
-        public static UnityEvent Fight = new UnityEvent();
-        public static int MaxAttackCard;
+        public static UnityEvent<int> activeHex = new UnityEvent<int>();
+        public static Vector3 activeHexPosition;
+        public static float activeHexAnimationSpeed;
+        public static int activeHexID;
    
-        public static void StartFight()
+        public static void UpHex(int hexID)
         {
-            Debug.Log("Fight Start");
-            Fight.Invoke();
+            activeHexID = hexID;
+            Debug.Log(activeHexID);
+            activeHex.Invoke(hexID);
         }
     }
 }

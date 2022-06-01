@@ -7,17 +7,13 @@ namespace FactWorld.Tools
     public class Gradient : MonoBehaviour
     {
         #region params
-        [SerializeField]
-        int _dim, _mainLayer, _rad, _seed;
-        [SerializeField]
-        float _brightness, _noiseScale;
-        [SerializeField]
-        IslandGen _isGen;
-        [SerializeField]
-        bool _InvertColor;
+        [SerializeField] int _dim, _mainLayer, _rad, _seed;
+        [SerializeField] float _brightness, _noiseScale;
+        [SerializeField] IslandGen _isGen;
+        [SerializeField] bool _InvertColor;
         #endregion
         [ContextMenu("Generate Texture")]
-        void Create()
+        public void Create()
         {
             _dim = _isGen.GetDim() + 2;
             _rad = _isGen.GetRad();
