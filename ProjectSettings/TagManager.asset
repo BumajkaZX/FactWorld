@@ -15,11 +15,11 @@ TagManager:
   - Sound
   - Enemy
   - Stencil Mask
-  - Stencil Text Mask
+  - Stencil UI Mask
   - Inner Card
   - Player
-  - 
-  - 
+  - Stencil UI Text Mask
+  - Card
   - 
   - 
   - 

@@ -71,10 +71,6 @@ namespace FactWorld.Tools
         {
             _objectID = ID;
         }
-        public int GetID()
-        {
-            return _objectID;
-        }
         public void SetOffset(float offset)
         {
             _offset = new Vector3(0, offset, 0);
